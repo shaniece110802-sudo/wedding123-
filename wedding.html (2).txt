@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IS OUR DAY</title>
+<style>
+  body {
+    font-family: "Microsoft YaHei", sans-serif;
+    background: url("bg.jpg") center/cover fixed;
+    text-align: center;
+    color: #b22222;
+    padding: 30px;
+    overflow-x: hidden;
+  }
+  .container {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 480px;
+    margin: auto;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    position: relative;
+    z-index: 10;
+  }
+  h1 { font-size: 28px; margin-bottom: 10px; }
+  select, input {
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    margin: 5px;
+  }
+  input { width: 65%; }
+  button {
+    background: #b22222;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 5px;
+  }
+  button:hover { background: #d93232; }
+  ul { list-style: none; padding: 0; }
+  li { margin: 5px 0; }
+  .not-checked { color: #777; }
+  #result { margin: 10px 0; font-weight: bold; }
+  #stats { margin-top: 10px; font-size: 16px; }
+
+  /* 🌸 爱心飘落 */
+  .heart {
+    position: fixed;
+    top: -20px;
+    font-size: 20px;
+    color: pink;
+    animation: fall 4s linear forwards;
+    z-index: 1;
+  }
+  @keyframes fall {
+    0% {transform: translateY(0) rotate(0deg); opacity: 1;}
+    100% {transform: translateY(100vh) rotate(360deg); opacity: 0;}
+  }
+
+  /* 🔍 自动补全列表 */
+  #suggestions {
+    position: absolute;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    max-height: 150px;
+    overflow-y: auto;
+    width: 65%;
+    margin-left: 65px;
+    z-index: 100;
+  }
+  #suggestions div {
+    padding: 8px;
+    cursor: pointer;
+  }
+  #suggestions div:hover {
+    background: #ffe4e1;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <img src="happy_wedding.png" alt="Wedding" width="200">
+    <h1>IS OUR DAY</h1>
+
+    <select id="sideSelect" onchange="switchSide()">
+      <option value="male">男方名单</option>
+      <option value="female">女方名单</option>
+    </select>
+
+    <div style="position: relative;">
+      <input id="nameInput" type="text" placeholder="请输入名字" oninput="showSuggestions()">
+      <div id="suggestions"></div>
+    </div>
+
+    <button onclick="signIn()">签到</button>
+    <div id="result"></div>
+
+    <button onclick="showNotSigned()">查看未签到</button>
+    <button onclick="exportSignedList()">导出签到名单</button>
+    <button onclick="clearAll()">清空签到记录</button>
+
+    <div id="stats"></div>
+    <ul id="notSignedList"></ul>
+  </div>
+
+<script>
+  // 💙 男方名单
+  const guestListMale = ["邓顺城（表哥）合家","李鸿鑫（表姐夫）合家","Ronnie Leong & Eileen Low","邓广礼（舅舅）合家","李振温（表姐夫合家）","邓顺和（表哥）合家","Ms Sam Mei & Family","Mr Vincent Hong & Family","林进财先生","谭慧勤先生","蔡克棋夫妇","Mdm Helen Lai & Family","王锦壕先生","Mr & Mrs Dennis Low","Mr & Mr Alex Teh","Mr & Mrs Jason Ng","Mr Benny Tung","Mr Ong Tiong Yee","Mr Vincent Tee","Ms Wai Ling & Mr Foo","Mr Jeff Ooi","Mr & Mrs Terry Chung","Mr Chris Koh & Family","Mr Steven Yeoh","刘永豪先生","周泓达夫妇","林道祥夫妇","Anjo Chong","Ms.Albee Fong","叶兴辉夫妻","Ms.Jessie Tan","刘永安夫妇","何俐莹小姐","Ms.Cherish","李彩雯夫妇","Ms.Suki","Andrew SKP","汤伟光先生","汤佩英小姐","刘永胜夫妇","刘永为先生","彭添财先生","Mr & Mrs Kenneth Koo","Mr SK Lim & Family","许财龙先生","Mr Ng Jin Hoe & Family","Mr Ng Loon Ping","Mr Lionel Tan","Mr Jack Chua","李国豪先生","Mr Lee Yoke Wah","黄云川先生","黄伟坤先生","Mr & Mrs Ng Seng Meng","蔡金建先生","Mr Javet Khoo","Mr Marcus Lim","Mr & Mrs Jonathan Yeow","Mr William Tan","伍世祥夫妇","Mr Larry Tan & Family","黄丽冰小姐","Mr & Mrs Justin Tan","Mr Lee Keat Hoe","Ms Jane Loo","Ms Sow Jia Yee","Ms Sow Xin Yee","Mr Damon & Ms Jeslyn","Mr Pang Chye What & Family","Ms Wen Low","Mr Loo Yong Jun & Family","Mr Sean Khuan & Family","Mr & Mrs Long","Mr Kevin Cheng","吴束俊先生","Mr Bernard Leong","洪世伟先生","黄哲翔先生","林志翰夫妇","吴俐恩小姐","Ms Sharon Yong","Mr Bosco Chong","王琇环女士","Mr & Mrs Kevin Yong","彭家宏夫妇","龠卿强先生","Mr Wen Jun","王德丰先生","Mr Anthony Ng","吴素蕊小姐","Mr & Mrs Stanley Wong","Mr Ryan Siah","Mr Kit"];
+
+  // 💖 女方名单
+  const guestListFemale = ["罗丽清女士","宋清地 合家","陈如九 夫妇","宋煌皇 先生","宋贵荣 夫妇","宋清源 合家","宋清俨 先生","李瑞禄 合家","Mr. & Mrs.Albert Chiew & Family","Jane Chew and family","Alicia Chew and family","Mr & Mrs Damian Yeo","Mr & Mrs Alex Chew","邓焕洪 合家","Ms. Chew Loke Lai","Mr. & Mrs.Albert Chiew & Family","沈赐藩 合家","Chiew Boon Chong & Family","Mdm Tan Man Yeng & Family","Ms.Lye Li Yin","Ms.Winni Ling","邓义绮小姐","杨诗铃 女士","苏亿慧 女士","谢柔菌 女士","May JM with Partner","Ms.Elaine Tiew","Ms.Jocelyn Yu","Ms.Wong Pei Leen","Ms.Eunice Foo","菲哥","李冬平","陈为隽","Mr.Terry Teng","Ms.Maydeline Ang","戴伟庭先生","余耀铖先生","蔡威胜先生","Ms. Jia Qi","Mr.Ryan","Mr & Ms.Katheline","阿宝先生"];
+
+  let currentSide = "male";
+  const signedMale = new Set(JSON.parse(localStorage.getItem("signedMale") || "[]"));
+  const signedFemale = new Set(JSON.parse(localStorage.getItem("signedFemale") || "[]"));
+
+  function getCurrentList() {
+    return currentSide === "male" ? guestListMale : guestListFemale;
+  }
+  function getCurrentSigned() {
+    return currentSide === "male" ? signedMale : signedFemale;
+  }
+  function saveData() {
+    localStorage.setItem("signedMale", JSON.stringify([...signedMale]));
+    localStorage.setItem("signedFemale", JSON.stringify([...signedFemale]));
+  }
+
+  // 🎯 签到
+  function signIn() {
+    const input = document.getElementById("nameInput");
+    const name = input.value.trim();
+    const result = document.getElementById("result");
+    const signed = getCurrentSigned();
+    const list = getCurrentList();
+    if (!name) return (result.textContent = "请输入名字。");
+    if (!list.includes(name)) return (result.textContent = "名单中没有此名字。");
+    if (signed.has(name)) return (result.textContent = `✅ ${name} 已签到过了！`);
+
+    signed.add(name);
+    saveData();
+    result.textContent = `✅ 欢迎 ${name} 签到成功！`;
+    input.value = "";
+    hideSuggestions();
+    createHearts();
+    updateStats();
+  }
+
+  // 💕 飘爱心
+  function createHearts() {
+    for (let i = 0; i < 8; i++) {
+      const heart = document.createElement("div");
+      heart.className = "heart";
+      heart.textContent = ["💖","💕","💞"][Math.floor(Math.random()*3)];
+      heart.style.left = Math.random()*100 + "vw";
+      heart.style.animationDuration = 3 + Math.random()*2 + "s";
+      document.body.appendChild(heart);
+      setTimeout(()=>heart.remove(),5000);
+    }
+  }
+
+  // 📋 未签到
+  function showNotSigned() {
+    const list = document.getElementById("notSignedList");
+    list.innerHTML = "";
+    const all = getCurrentList();
+    const signed = getCurrentSigned();
+    const notSigned = all.filter(n => !signed.has(n));
+    if (!notSigned.length) return (list.innerHTML = "<li>🎉 所有人都已签到！</li>");
+    notSigned.forEach(n => {
+      const li = document.createElement("li");
+      li.textContent = n;
+      li.className = "not-checked";
+      list.appendChild(li);
+    });
+  }
+
+  // 💾 导出
+  function exportSignedList() {
+    const text = 
+      "💙 男方已签到：\n" + [...signedMale].join("\n") + 
+      "\n\n💖 女方已签到：\n" + [...signedFemale].join("\n");
+    const blob = new Blob([text], {type:"text/plain;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "签到名单.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // 🧹 清空
+  function clearAll() {
+    if (confirm("确定要清空所有签到记录吗？")) {
+      signedMale.clear(); signedFemale.clear();
+      saveData(); updateStats();
+      document.getElementById("result").textContent = "所有签到记录已清空。";
+      document.getElementById("notSignedList").innerHTML = "";
+    }
+  }
+
+  // 🔍 自动补全
+  function showSuggestions() {
+    const input = document.getElementById("nameInput");
+    const suggestions = document.getElementById("suggestions");
+    const value = input.value.trim();
+    const list = getCurrentList();
+    suggestions.innerHTML = "";
+    if (!value) return;
+
+    const matches = list.filter(n => n.toLowerCase().includes(value.toLowerCase())).slice(0, 8);
+    matches.forEach(name => {
+      const div = document.createElement("div");
+      div.textContent = name;
+      div.onclick = () => {
+        input.value = name;
+        hideSuggestions();
+      };
+      suggestions.appendChild(div);
+    });
+  }
+  function hideSuggestions() {
+    document.getElementById("suggestions").innerHTML = "";
+  }
+
+  // 🧭 切换
+  function switchSide() {
+    currentSide = document.getElementById("sideSelect").value;
+    document.getElementById("result").textContent = "";
+    document.getElementById("notSignedList").innerHTML = "";
+    hideSuggestions();
+    updateStats();
+  }
+
+  // 📊 统计
+  function updateStats() {
+    const stats = document.getElementById("stats");
+    const list = getCurrentList();
+    const signed = getCurrentSigned();
+    const label = currentSide === "male" ? "男方" : "女方";
+    stats.textContent = `${label} 已签到：${signed.size} / ${list.length}`;
+  }
+  updateStats();
+</script>
+</body>
+</html>
